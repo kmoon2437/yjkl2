@@ -147,11 +147,14 @@ module.exports = class Parser{
             }else if(chr == '='){
                 isVal = true;
             }else if(chr == ';'){
-                if(!isVal){
-                    // 값 없이 바로 구분자가 오면 boolean(true)으로 처리
-                    result[key] = true;
-                }else{
-                    result[key] = val;
+                key = key.trim();
+                if(key){
+                    if(!isVal){
+                        // 값 없이 바로 구분자가 오면 boolean(true)으로 처리
+                        result[key] = true;
+                    }else{
+                        result[key] = val;
+                    }
                 }
                 isVal = false;
                 key = val = '';

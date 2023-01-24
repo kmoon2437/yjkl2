@@ -84,7 +84,6 @@ module.exports = class CommandConverter{
         let line = cloneObject(initialLine);
         let lines = [];
         let ignoreLine = false;
-        let forceStartCount = false;
         for(var cmd of commands){
             switch(cmd.type.toLowerCase()){
                 case 'c':{

@@ -15,6 +15,7 @@ module.exports = class BPMConverter{
                 bpm:e.bpm,ms,tick:e.time
             });
         }
+        //console.log(this);
     }
 
     convertToMs(tick){

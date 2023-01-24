@@ -64,7 +64,7 @@ module.exports = class Converter{
         let events = new Events();
         for(let i in classifiedLines){
             classifiedLines[i].forEach((line,j) => {
-                //console.log(line.startCount);
+                //console.log(line.sub,i,j,line.params,line.startCount);
                 if(line.startCount){
                     let beat = 60000/line.timings[0].currentBPM;
                     let startTime = line.timings[0].start;
