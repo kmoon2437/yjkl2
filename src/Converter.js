@@ -108,6 +108,7 @@ module.exports = class Converter{
             headers:classifiedHeaders,
             rawHeaders:headers,
             events:events.getAll(),
+            lyricLines:lines,
             debug:{
                 commands,bpmChanges
             }
