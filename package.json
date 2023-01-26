@@ -6,11 +6,18 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "bin": {
+    "content2yjkl2": "cli/content2yjkl2.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/kmoon2437/yjkl2.git"
   },
-  "author": "",
+  "author": {
+    "name": "Cho Yunjin",
+    "email": "kmoon2437@gmail.com",
+    "url": "https://choyunjin.kr"
+  },
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/kmoon2437/yjkl2/issues"
