@@ -23,9 +23,9 @@ module.exports = class Converter{
         },opts);
         let classifiedHeaders = classifyHeader(headers);
 
-        let useMRSync = opts.forceMRSync ? true : !classifiedHeaders.files.midi;
+        let useAudioSync = opts.forceAudioSync ? true : !classifiedHeaders.files.midi;
         let sync = Parser.parseNumber(classifiedHeaders['sync-offset']);
-        if(useMRSync) sync += Parser.parseNumber(classifiedHeaders['mr-sync-offset']);
+        if(useAudioSync) sync += Parser.parseNumber(classifiedHeaders['audio-sync-offset']);
         
         // bpm을 반영해 밀리초로 변환
         classifiedHeaders['ticks-per-beat'] = parseInt(classifiedHeaders['ticks-per-beat'],10) || 120;

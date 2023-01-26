@@ -27,13 +27,13 @@ const PARAM_PARSE_REGEX = /\[{(.+?)=(.+?)}\]/;
 const PREPROCESS_REGEX = /^#([0-9a-zA-Z_$]+?)( *?)(.*?)$/g;
 
 const input = fs.readFileSync(inputfile,'utf8').replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n\n');
-let output = `File-midi:midi.mid // 적당한 파일명을 지정하세요. 이 부분을 사용하지 않는다면 지워도 좋습니다.
-File-album:album.png
-File-mr:mr.ogg
-File-mv:mv.mkv
-MV-timing:0 // 뮤비 시작시간을 밀리초로 지정하세요. mv를 사용하지 않거나 기본값(0)으로 놔둘 거면 지워도 좋습니다.
-Meta-layout:0 // 일본곡인 경우 7을 입력하세요. 그 외에는 지워도 좋습니다.
-Sync:0 // 가사 전체 싱크(없어도 됨)
+let output = `file-midi:midi.mid // 적당한 파일명을 지정하세요. 이 부분을 사용하지 않는다면 지워도 좋습니다.
+file-album:album.png
+file-audio:audio.ogg
+file-mv:mv.mkv
+mv-timing:0 // 뮤비 시작시간을 밀리초로 지정하세요. mv를 사용하지 않거나 기본값(0)으로 놔둘 거면 지워도 좋습니다.
+layout:0 // 일본곡인 경우 7을 입력하세요. 그 외에는 지워도 좋습니다.
+sync-offset:0 // 가사 전체 싱크(없어도 됨)
 
 c bpm 120 0 // 적당한 bpm을 지정하세요.`;
 let verseEnded = true;
@@ -50,10 +50,15 @@ for(let verse of input){
         if(lines[i].match(PREPROCESS_REGEX)){
             let [ cmd,...args ] = lines[i].slice(1).split(/ +/g);
             if(cmd == 'param'){
-                preprocess.param[args[0]] = args[1];
                 switch(args[0]){
                     case 'p':
-                        if(args[1] == 0) delete preprocess.param.p;
+                        args[0] = 'style';
+                    break;
+                }
+                preprocess.param[args[0]] = args[1];
+                switch(args[0]){
+                    case 'style':
+                        if(args[1] == 0) delete preprocess.param.style;
                     break;
                 }
             }
@@ -74,15 +79,13 @@ for(let verse of input){
         let syllLength = Lyrics.Parser.parseSentence(sentence2).body.filter(a => a.body.trim()).length;
         if(!verseEnded) output += '\nl';
         verseEnded = false;
-        let matches,isP,params = {};
+        let matches,isStyled,params = {};
         if(matches = sentence.match(PARAM_REGEX)){
             for(let raw of matches){
                 let [ key,value ] = raw.match(PARAM_PARSE_REGEX).slice(1);
                 switch(key.toLowerCase()){
                     case 'p': params.style = value; isStyled = true; console.log('"p" is deprecated. use "style" instead.'); break;
-                    case 'p': params.style = value; isStyled = true; break;
-                    case 'flag': if(value == 'upper'){ params.upper = true; } console.log('"flag" is deprecated.'); break;
-                    case 'upper': params.upper = true; break;
+                    case 'style': params.style = value; isStyled = true; break;
                 }
             }
         }
@@ -105,7 +108,7 @@ for(let verse of input){
         output += `\nt 0`;
         //output += '\n'+JSON.stringify(syllables)
     }
-    output += '\nl -';
+    output += '\nl';
     verseEnded = true;
 }
 
