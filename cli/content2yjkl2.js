@@ -94,8 +94,9 @@ for(let verse of input){
             sentence2 = sentence2.slice(1,-1);
         }
         
-        if(Object.keys(params).length) output += '\np ';
-        let parr = [];
+        output += '\nn ';
+        output += '\np ';
+        let parr = ['show=-1'];
         for(let i in params){
             parr.push(`${i}=${params[i]}`);
         }

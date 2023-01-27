@@ -131,7 +131,7 @@ module.exports = class CommandConverter{
                     // 아래 둘 중 하나라도 없으면 그 줄 자체를 무시
                     // 1. n <숫자> (줄 번호)
                     // 2. p show=<숫자> (가사 표시 타이밍)
-                    if(lines.lineCode !== null && lines.showTime !== null){
+                    if(lines.lineCode !== null && lines.showTime !== null && lines.showTime >= 0){ // showTime을 음수로 넣음으로써 가사를 무시하도록 할 수 있음
                         lines.push(this.#convertLine(line));
                     }
                     playtime = 0;
