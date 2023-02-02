@@ -8,7 +8,7 @@ module.exports = class Events{
     }
 
     add(ms,name,data,unshift = false){
-        ms = Math.round(ms);
+        ms = Math.max(0,Math.round(ms));
         if(!this._events[ms]) this._events[ms] = [];
         if(unshift) this._events[ms].unshift({ name:name,data:data });
         else this._events[ms].push({ name:name,data:data });
