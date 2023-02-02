@@ -356,7 +356,7 @@ module.exports = class Parser{
         }else if(typeof time == 'string'){
             if(time.startsWith('!')){
                 // 가사를 멈추는 부분에서는 콤마로 타이밍을 나눌 수 없음
-                return SingleDuration(this.#parseMathExpression(time.slice(1)),1,false,true);
+                return new SingleDuration(this.#parseMathExpression(time.slice(1)),1,false,true);
             }else{
                 let split = time.split(',');
                 let parsed = split.map(a => Parser.#doParseDuration(a));
