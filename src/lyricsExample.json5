@@ -71,9 +71,10 @@
             show:6000, // 표시시각
             hide:8000, // 숨김시각(없으면 다음에 같은 위치에 오는 가사 시작시간으로 적용)
             sub:'발음',
-            start: 5860,
-            style:0, // style(가사 색)은 0(기본),1,2,3,4,9가 있음(음수를 넣으면 9로 적용)
-            params:{ startCount:true,align:0 }, // startCount는 시작 카운트 넣는 거고 align은 글자 정렬(둘 다 없어도 됨)
+            start:5860,
+            // startCount는 시작 카운트 넣는 거고 align은 글자 정렬(둘 다 없어도 됨)
+            // style(가사 색)은 -1,0(기본),1,2,3,4가 있음
+            params:{ startCount:true,style:0,align:0 },
             data: [
                 ['가사',20],
                 ['[내용]<후리가나>',20], // 대괄호를 써야 여러 글자로 루비를 넣을 수 있음
