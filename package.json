@@ -26,6 +26,10 @@
   "dependencies": {
     "command-line-args": "^5.2.1",
     "commander": "^10.0.0",
+    "json5": "^2.2.3",
     "mathjs": "^11.5.0"
+  },
+  "devDependencies": {
+    "jison": "^0.4.18"
   }
 }
