@@ -1,5 +1,4 @@
-const { SingleDuration,DurationCollection } = require('./utilClasses');
-const mathjs = require('mathjs');
+const mathExpressionParser = require('./mathExpressionParser');
 
 const ALPHABETS = require('./alphabets'); // 영어,라틴문자,키릴문자,그리스문자 등등등
 const WIDTH_CONVERT_TABLE = require('./widthConvert');
@@ -48,121 +47,6 @@ function strReplaceAll(str,a,b){
 }
 
 module.exports = class Parser{
-    static parse(data){
-        // 버퍼일수도 있으니 문자열로 변환
-        data = data.toString();
-
-        // 주석 제거
-        data = removeComments(data.replace(/\r\n/g,'\n').replace(/\r/g,'\n'));
-
-        // header와 content로 분리
-        data = data.trim().split(/\n\n+/g);
-        var { header,content } = { header:data[0],content:data[1] };
-        {
-            let arr = [...data];
-            arr.shift();
-            for(var i in arr){
-                arr[i] = arr[i].trim();
-            }
-            content = arr.join('\n').trim();
-        }
-
-        // header는 대소문자를 무시한다.
-        var headers = {};
-        header = header.trim().split('\n');
-        for(var h of header){
-            var hh = h.split(':');
-            var key = hh[0];
-            hh.shift();
-            var val = hh.join(':');
-            let str = val.trim();
-            headers[key.toLowerCase()] = str.trim();
-        }
-
-        var commands = [];
-        content = content.trim().split('\n');
-        for(var c of content){
-            var cc = c.trim().split(SPACE_REGEX);
-            
-            var type = cc.shift().toLowerCase();
-            var cmd = {};
-            cmd.type = type;
-            switch(type){
-                case 'c':
-                    cmd.cmd = cc;
-                break;
-                case 't':
-                    cmd.timings = cc;
-                break;
-                case 'l':
-                    cmd.end = cc[0] == LINE_END || (() => {
-                        if(!cc[0]) return false;
-                        let [ tick,ms ] = cc[0].split(':');
-                        return !Number.isNaN(parseFloat(tick)) && (!ms || !Number.isNaN(parseFloat(ms)));
-                    })();
-                    if(cmd.end) cmd.endTime = cc[0] == LINE_END ? 0 : cc[0];
-                    cmd.forceStartCount = cc[0] == FORCE_START_COUNT;
-                break;
-                case 'f':
-                    cmd.time = this.parseNumber(cc[0]);
-                break;
-                case 'n':
-                    cmd.lineCode = this.parseNumber(cc[0]);
-                break;
-                case 's':
-                    cmd.sentence = cc.join(' ');
-                break;
-                case 'u':
-                    cmd.sentence = cc.join(' ');
-                break;
-                case 'p':
-                    cmd.params = Parser.parseParams(c.replace(/p( +)/i,''));
-                break;
-            }
-            commands.push(cmd);
-        }
-
-        return { headers,commands };
-    }
-
-    /*static isRuby(sentence){
-        let a = Parser.parseRubySyntax(sentence);
-        return !!a.map(e => e[1]).join('');
-    }*/
-    
-    static parseParams(src){
-        let key = '';
-        let val = '';
-        let isVal = false;
-        let result = {};
-        let isEscape = false;
-        if(!src.endsWith(';')) src += ';';
-        for(let i in src){
-            let chr = src[i];
-            if(isEscape){
-                isEscape = false;
-                isVal ? val += chr : key += chr;
-            }else if(chr == ESCAPE){
-                isEscape = true;
-            }else if(chr == '='){
-                isVal = true;
-            }else if(chr == ';'){
-                key = key.trim();
-                if(key){
-                    if(!isVal){
-                        // 값 없이 바로 구분자가 오면 boolean(true)으로 처리
-                        result[key] = true;
-                    }else{
-                        result[key] = val;
-                    }
-                }
-                isVal = false;
-                key = val = '';
-            }else isVal ? val += chr : key += chr;
-        }
-        return result;
-    }
-    
     // 슬래시(/) 없이 사용하는 경우
     static splitSentence(parsed){
         let str = '';
@@ -289,12 +173,14 @@ module.exports = class Parser{
     }
     
     static #parseMathExpression(num){
-        let n = '';
-        for(let chr of num){
-            if(NUMBER_ALLOWED.indexOf(chr) > -1) n += chr;
+        try{
+            return mathExpressionParser.parse(num);
+        }catch(e){ // 에러 시 0 리턴
+            // stderr에 메세지를 출력하므로
+            // stdout에는 영향을 미치지 않음
+            console.error(e);
+            return 0;
         }
-        // console.log(n);
-        return mathjs.evaluate(n);
     }
     
     static parseNumber(num){
@@ -317,79 +203,68 @@ module.exports = class Parser{
     }
     
     // 여러 수의 최대공약수를 계산
-    static #calcGCD(arr){
+    static calcGCD(arr){
+        if(arr.length < 2) return arr[0];
         let gcd = Parser.#doCalcGCD(arr.shift(),arr.shift());
         while(arr.length){
             gcd = Parser.#doCalcGCD(gcd,arr.shift());
         }
         return gcd;
     }
-    
-    static #doParseDuration(time){
-        let [ ttt,ms ] = time.split(':');
-        let [ ratio,tick ] = ttt.split('@').length > 1 ? ttt.split('@') : [1,ttt];
 
-        let stakato = tick.startsWith('*');
-        let ratioo = parseInt(ratio,10);
-        if(stakato){
-            let tick2 = tick.split('');
-            tick2.shift();
-            tick = tick2.join('');
-        }
-        tick = this.#parseMathExpression(tick);
-        //if(ms) ms = this.#parseMathExpression(ms);
-        return new SingleDuration(tick,ratioo,stakato,false);
+    static cleanRubySyntax(arr){
+        let result = [];
+        let i = 0;
+        arr.forEach(syll => {
+            syll.forEach(chr => {
+                //
+                i++;
+            });
+        });
     }
 
-    // ,를 사용해 여러개 붙일 수 있음
-    // (즉 한글자를 여러번 나눠서 색칠 가능)
-    // 비율@시간 형태로 쓸 수 있음
-    // 비율은 생략 가능,생략시 기본값은 1
-    // - 예시1: 197,*3@121 => 4개로 나눠서 1:3 비율로 색칠
-    // - 예시2: 2@60,240,240 => 2:1:1 비율로 색칠
-    static parseDuration(time){
-        if(typeof time == 'number'){
-            return new SingleDuration(
-                parseFloat(Parser.parseNumber(time)),
-                1,false,false
-            );
-        }else if(typeof time == 'string'){
-            if(time.startsWith('!')){
-                // 가사를 멈추는 부분에서는 콤마로 타이밍을 나눌 수 없음
-                return new SingleDuration(this.#parseMathExpression(time.slice(1)),1,false,true);
-            }else{
-                let split = time.split(',');
-                let parsed = split.map(a => Parser.#doParseDuration(a));
-                if(split.length > 1){
-                    let gcd = Parser.#calcGCD(parsed.map(a => a.ratio));
-                    for(let i in parsed){
-                        parsed[i].ratio /= gcd;
-                    }
-                }
-                return parsed;
-            }
-        }else return new SingleDuration(0,1,false,false);
-    }
-    
-    static parseRubySyntax(text){
+    static parseRubySyntax(text,splitLengths = null){
         let ruby = [];
-        let body = '';
+        let body = [''];
         let status = {
             body:'',
             ruby:'',
             rubyContent:'',
             str:'',
+            isEscape:false,
             beforeLength:0,
             afterLength:0,
             bodyBlockClosed:false,
             alphabetLength:0,
             alphabetRuby:false,
-            dontCountLength:false
+            dontCountLength:false,
+            splitLength:splitLengths?.shift()
         };
-        let specialChars = [...SPECIAL_CHARS,TYPE_BRACKET_OPEN,TYPE_BRACKET_CLOSE,CHANGE_TYPE_START,CHANGE_TYPE_END];
+        if(!(splitLengths instanceof Array) || splitLengths.reduce((a,b) => a+b,0) < text.length-status.splitLength) status.splitLength = Infinity;
+        let specialChars = [...SPECIAL_CHARS];
         for(let i in text){
             let chr = text[i];
-            if(BODY_BLOCK[chr]){
+            //console.log(chr,i,status.splitLength);
+            if(i >= status.splitLength){
+                body.push('');
+                status.splitLength += splitLengths.shift();
+            }
+            if(status.isEscape){
+                if(status.ruby){
+                    status.rubyContent += chr;
+                }else{
+                    body[body.length-1] += chr;
+                    if(status.body) status.afterLength++;
+                    else{
+                        status.beforeLength++;
+                        if(ALPHABETS.indexOf(chr) >= 0){
+                            status.alphabetLength++;
+                        }else{
+                            status.alphabetLength = 0;
+                        }
+                    }
+                }
+            }else if(BODY_BLOCK[chr]){
                 if(status.body) throw new SyntaxError(`Already opened the body block at position ${i} (character: '${chr}')`);
                 if(status.ruby) throw new SyntaxError(`Already opened the ruby block at position ${i} (character: '${chr}')`);
                 status.body = chr;
@@ -432,47 +307,25 @@ module.exports = class Parser{
                 if(status.ruby){
                     status.rubyContent += chr;
                 }else if(chr == ESCAPE){
-                    status.escape = true;
-                }else if(chr == WORD_RUBY && !status.body && !status.escape){
+                    status.isEscape = true;
+                }else if(chr == WORD_RUBY && !status.body){
                     status.alphabetRuby = true;
                 }else{
-                    if(chr == CHANGE_TYPE_START) status.dontCountLength = true;
-                    else if(chr == CHANGE_TYPE_END) status.dontCountLength = false;
-                    body += chr;
-                    if(specialChars.indexOf(chr) < 0 && !status.dontCountLength){
-                        if(status.body) status.afterLength++;
-                        else{
-                            status.beforeLength++;
-                            if(ALPHABETS.indexOf(chr) >= 0){
-                                status.alphabetLength++;
-                            }else{
-                                status.alphabetLength = 0;
-                            }
+                    body[body.length-1] += chr;
+                    if(status.body) status.afterLength++;
+                    else{
+                        status.beforeLength++;
+                        if(ALPHABETS.indexOf(chr) >= 0){
+                            status.alphabetLength++;
+                        }else{
+                            status.alphabetLength = 0;
                         }
                     }
                 }
             }
-            if(chr != ESCAPE) status.escape = false;
+            if(chr != ESCAPE) status.isEscape = false;
         }
 
-        let bodyArr = [];
-        let bracketed = false;
-        let bodyContent = '';
-        for(let chr of body){
-            if(chr == TYPE_BRACKET_OPEN){
-                if(bodyContent) bodyArr.push({ bracketed,body:bodyContent });
-                bracketed = true;
-                bodyContent = '';
-            }else if(chr == TYPE_BRACKET_CLOSE){
-                if(bodyContent) bodyArr.push({ bracketed,body:bodyContent });
-                bracketed = false;
-                bodyContent = '';
-            }else{
-                bodyContent += chr;
-            }
-        }
-        if(bodyContent) bodyArr.push({ bracketed,body:bodyContent });
-
-        return { ruby,body:bodyArr.filter(a => a.body) };
+        return { ruby,body };
     }
 }
