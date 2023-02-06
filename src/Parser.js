@@ -204,6 +204,7 @@ module.exports = class Parser{
     
     // 여러 수의 최대공약수를 계산
     static calcGCD(arr){
+        arr = [...arr];
         if(arr.length < 2) return arr[0];
         let gcd = Parser.#doCalcGCD(arr.shift(),arr.shift());
         while(arr.length){

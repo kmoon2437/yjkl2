@@ -40,6 +40,7 @@ module.exports = class LineConverter{
                 splitTimes.pop(); // 중간에 나눌 타이밍만 넣기 위함
                 let gcd = Parser.calcGCD(splitRatio);
                 splitRatio = splitRatio.map(a => a / gcd);
+                //console.log(splitRatio)
                 timings.push({
                     start,end:syll.params?.s ? (splitTimes[splitTimes.length-1] ?? start)+STAKATO_TICK : playtime,
                     currentBPM:0,splitTimes,splitRatio
@@ -60,7 +61,7 @@ module.exports = class LineConverter{
                 showTime:line.show,
                 hideTime:line.hide || null,
                 sub:line.sub,
-                params:line.params,timings,
+                params:line.params || {},timings,
                 syllables:cleanedSyllables
             });
         });

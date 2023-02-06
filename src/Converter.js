@@ -59,10 +59,11 @@ module.exports = class Converter{
         for(let i in classifiedLines){
             classifiedLines[i].forEach((line,j) => {
                 //console.log(line.sub,i,j,line.params,line.startCount);
-                if(line.startCount){
+                if(line.params.startCount){
                     let beat = 60000/line.timings[0].currentBPM;
                     let startTime = line.timings[0].start;
-                    for(let i = 0;i <= line.startCount;i++){
+                    let count = typeof line.params.startCount == 'number' ? Math.max(1,Math.min(4,line.params.startCount)) : 4;
+                    for(let i = 0;i <= count;i++){
                         events.add(startTime-(beat*i),'countdown',{ val:i || null,lineCode:line.lineCode });
                     }
                 }
