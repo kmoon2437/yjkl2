@@ -8,43 +8,12 @@ const FORCE_SPLIT = '/';
 const CONNECT_SYLLABLES = '*';
 const SPLIT_ALPHABET = '_';
 const ESCAPE = '\\';
-const LINE_END = '-';
-const FORCE_START_COUNT = '#';
 const SPACE_REGEX = /[\u0020\u00a0\u3000]+/g; // \u0020(일반 띄어쓰기)와 \u00a0(nbsp), \u3000(전각 띄어쓰기)를 모두 인식
 const TYPE_BRACKET_OPEN = '(';
 const TYPE_BRACKET_CLOSE = ')';
 const WORD_RUBY = ':';
-const CHANGE_TYPE_START = '@';
-const CHANGE_TYPE_END = ';';
-const COMMENT_REGEX1 = /\/\/.*/g; // 한줄 주석
-const COMMENT_REGEX2 = /\/\*(.*?)\*\//gs; /* 여러줄 주석 */
-const NUMBER_ALLOWED = '0123456789.+-*/()^';
 const SPECIAL_CHARS = [FORCE_SPLIT,CONNECT_SYLLABLES,SPLIT_ALPHABET];
 const SPECIAL_CHARS2 = [...Object.keys(BODY_BLOCK),TYPE_BRACKET_OPEN];
-
-function removeComments(str){
-    return str.replace(COMMENT_REGEX2,'').replace(COMMENT_REGEX1,'').trim();
-}
-
-function strReplaceAll(str,a,b){
-    if(a instanceof Array && !(b instanceof Array)){
-        for(let s of a){
-            str = strReplaceAll(str,s,b);
-        }
-    }else if(b instanceof Array && !(a instanceof Array)){
-        for(let s of b){
-            str = strReplaceAll(str,a,s);
-        }
-    }else if(a instanceof Array && b instanceof Array){
-        let cnt = Math.max(a.length,b.length);
-        for(let i = 0;i < cnt;i++){
-            str = strReplaceAll(str,a[Math.min(i,a.length-1)],b[Math.min(i,b.length-1)]);
-        }
-    }else{
-        str = str.replaceAll(a,b);
-    }
-    return str;
-}
 
 module.exports = class Parser{
     // 슬래시(/) 없이 사용하는 경우
@@ -155,8 +124,8 @@ module.exports = class Parser{
             syllables.body = Parser.splitSentence(syllables.body);
         }
         
-        // 전각<->반각 간 변환
-        syllables.ruby = syllables.ruby.map(a => {
+        // 전각<->반각 간 변환은 걍 안함
+        /*syllables.ruby = syllables.ruby.map(a => {
             for(let i in WIDTH_CONVERT_TABLE){
                 a.ruby = strReplaceAll(a.ruby,i,WIDTH_CONVERT_TABLE[i]);
             }
@@ -167,7 +136,7 @@ module.exports = class Parser{
                 a.body = strReplaceAll(a.body,i,WIDTH_CONVERT_TABLE[i]);
             }
             return a;
-        });
+        });*/
     
         return syllables; // 잘린 거
     }
@@ -213,17 +182,6 @@ module.exports = class Parser{
         return gcd;
     }
 
-    static cleanRubySyntax(arr){
-        let result = [];
-        let i = 0;
-        arr.forEach(syll => {
-            syll.forEach(chr => {
-                //
-                i++;
-            });
-        });
-    }
-
     static parseRubySyntax(text,splitLengths = null){
         let ruby = [];
         let body = [''];
@@ -242,7 +200,6 @@ module.exports = class Parser{
             splitLength:splitLengths?.shift()
         };
         if(!(splitLengths instanceof Array) || splitLengths.reduce((a,b) => a+b,0) < text.length-status.splitLength) status.splitLength = Infinity;
-        let specialChars = [...SPECIAL_CHARS];
         for(let i in text){
             let chr = text[i];
             //console.log(chr,i,status.splitLength);
