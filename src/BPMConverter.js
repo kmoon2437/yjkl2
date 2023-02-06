@@ -7,12 +7,12 @@ module.exports = class BPMConverter{
         let lastTick = 0;
         let lastBPM = bpmChanges[0].bpm;
         for(let e of bpmChanges){
-            let ms = lastMs + 60000/lastBPM*((e.time - lastTick)/120);
+            let ms = lastMs + 60000/lastBPM*((e.changeAt - lastTick)/120);
             lastMs = ms;
-            lastTick = e.time;
+            lastTick = e.changeAt;
             lastBPM = e.bpm;
             this.bpmChanges.push({
-                bpm:e.bpm,ms,tick:e.time
+                bpm:e.bpm,ms,tick:e.changeAt
             });
         }
         //console.log(this);
