@@ -7,7 +7,7 @@ const Lyrics = require('../index');
 program
 .version(require('../package.json').version, '-v, --version')
 .usage('<input file> <output file>')
-.description('Convert lyrics data(*.txt file) to yjkl file')
+.description('Convert lyrics data(*.txt file) to json5 file for yjkl')
 .parse(process.argv);
 
 let [ inputfile,outputfile ] = program.args;
@@ -37,6 +37,9 @@ sync-offset:0 // 가사 전체 싱크(없어도 됨)
 
 c bpm 120 0 // 적당한 bpm을 지정하세요.`;
 let verseEnded = true;
+let data = {
+    files:{}
+};
 
 for(let verse of input){
     let lines = verse.split('\n');
@@ -89,12 +92,18 @@ for(let verse of input){
                 }
             }
         }
+
+        let isLine0 = false;
+        if(sentence2.startsWith('^')){
+            isLine0 = true;
+            sentence2 = sentence2.slice(1);
+        }
         if(!isStyled && sentence2.startsWith('(') && sentence2.endsWith(')')){
             params.style = -1;
             sentence2 = sentence2.slice(1,-1);
         }
         
-        output += '\nn ';
+        output += '\nn '+(isLine0 ? '0' : '');
         output += '\np ';
         let parr = ['show=-1'];
         for(let i in params){

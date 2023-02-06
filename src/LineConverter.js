@@ -1,16 +1,12 @@
-const Commands = require('./Commands');
 const Parser = require('./Parser');
-const { TimingEvent } = require('./utilClasses');
-const { cloneObject } = require('./utilFunctions');
 
-const STAKATO_MS = 10;
 const STAKATO_TICK = 1;
 
 module.exports = class LineConverter{
     static convert(data){
         let lines = [];
         data.lyrics.forEach(line => {
-            if(!line.line || !line.showTime) return;
+            if(typeof line.line != 'number' || line.showTime < 0) return;
             let syllables = [];
             let timings = [];
             let playtime = line.start;
@@ -24,12 +20,13 @@ module.exports = class LineConverter{
 
                 // 배열인 경우
                 let syll = { content:a.shift() };
-                if(typeof a[a.length-1] == 'object' && !(a instanceof Array)){
+                if(typeof a[a.length-1] == 'object' && !(a[a.length-1] instanceof Array)){
                     syll.params = a.pop(); // 특정 글자에만 스타일을 설정하는 경우
                 }
                 syllables.push(syll);
                 let start = playtime;
                 let splitRatio = [];
+                let splitTimes = [];
                 a.forEach(duration => {
                     if(duration instanceof Array){
                         playtime += duration[1];
@@ -44,13 +41,22 @@ module.exports = class LineConverter{
                 let gcd = Parser.calcGCD(splitRatio);
                 splitRatio = splitRatio.map(a => a / gcd);
                 timings.push({
-                    start,end:syll.params.s ? start+STAKATO_TICK : playtime,
+                    start,end:syll.params?.s ? (splitTimes[splitTimes.length-1] ?? start)+STAKATO_TICK : playtime,
                     currentBPM:0,splitTimes,splitRatio
                 });
             });
 
-            let cleanedSyllables = [];
+            let syllParams = syllables.map(a => a.params);
+            let syllLengths = syllables.map(a => a.content.length);
+            let cleanedSyllables = Parser.parseRubySyntax(
+                syllables.map(a => a.content).join(''),syllLengths
+            );
+            cleanedSyllables.body = cleanedSyllables.body.map((a,i) => {
+                return { style:syllables[i].params?.style || null,body:a };
+            });
+
             lines.push({
+                lineCode:line.line,
                 showTime:line.show,
                 hideTime:line.hide || null,
                 sub:line.sub,

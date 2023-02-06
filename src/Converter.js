@@ -1,36 +1,30 @@
-const CommandConverter = require('./CommandConverter');
+const LineConverter = require('./LineConverter');
 const Events = require('./Events');
-const Parser = require('./Parser');
 const BPMConverter = require('./BPMConverter');
-const { cloneObject,classifyHeader } = require('./utilFunctions');
 
 const LINE_0 = 0;
 const LINE_1 = 1;
 const LINE_2 = 2;
 
-const defaultOptions = {
-    headerOnly:false
-};
-
 module.exports = class Converter{
     static convert(data,opts){
-        return this.convertParsed(Parser.parse(data),opts);
-    }
-    
-    static convertParsed({ headers,commands },opts){
         opts = Object.assign({
             enableMsec:false
         },opts);
-        let classifiedHeaders = classifyHeader(headers);
+        
+        data.info = data.info || {};
+        data.files = data.files || {};
+        data.config = data.config || {};
 
-        let useAudioSync = opts.forceAudioSync ? true : !classifiedHeaders.files.midi;
-        let sync = Parser.parseNumber(classifiedHeaders['sync-offset']);
-        if(useAudioSync) sync += Parser.parseNumber(classifiedHeaders['audio-sync-offset']);
+        // data는 json 파싱이 됐다고 가정
+        let useAudioSync = opts.forceAudioSync ? true : !data.files.midi;
+        let sync = data.config.syncOffset || 0;
+        if(useAudioSync) sync += data.config.audioSyncOffset || 0;
         
         // bpm을 반영해 밀리초로 변환
-        classifiedHeaders['ticks-per-beat'] = parseInt(classifiedHeaders['ticks-per-beat'],10) || 120;
-        let { lines,bpmChanges } = CommandConverter.parseCommand(commands,headers);
-        let bpmc = new BPMConverter(bpmChanges,classifiedHeaders['ticks-per-beat'],sync);
+        data.config.ticksPerBeat = data.config.ticksPerBeat || 120;
+        let lines = LineConverter.convert(data);
+        let bpmc = new BPMConverter(data.tempo,data.config.ticksPerBeat,sync);
         //console.log(bpmc);
         for(let i in lines){
             lines[i].showTime = bpmc.convertToMs(lines[i].showTime);
@@ -99,19 +93,17 @@ module.exports = class Converter{
         events.add(lastEventTime+150,'showinfo',{});
         events.add(lastEventTime+150+7500,'cleangui',{});
 
-        if(classifiedHeaders.files.mv){
-            let time = classifiedHeaders['mv-timing'] || 0;
+        if(data.files.mv){
+            let time = data.files.mvTiming || 0;
             events.add(time,'playmv',{},true);
         }
 
         return {
-            headers:classifiedHeaders,
-            rawHeaders:headers,
+            info:data.info,
+            files:data.files,
+            config:data.config,
             events:events.getAll(),
-            lyricLines:lines,
-            debug:{
-                commands,bpmChanges
-            }
+            lyricLines:lines
         };
     }
 }
