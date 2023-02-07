@@ -1,5 +1,5 @@
 # yjkl2
-yjkl2(**YJK**araoke **L**yrics mk.**2**) parser
+yjkl2(**YJK**araoke **L**yrics mk.**2**) converter
 
-## beta version
-beo geu ma na yo
+## release version
+yee ji man beo geu ma neul su ga isseo yo

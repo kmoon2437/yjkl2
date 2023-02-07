@@ -199,6 +199,7 @@ module.exports = class Parser{
             dontCountLength:false,
             splitLength:splitLengths?.shift()
         };
+        //console.log(splitLengths)
         if(!(splitLengths instanceof Array) || splitLengths.reduce((a,b) => a+b,0) < text.length-status.splitLength) status.splitLength = Infinity;
         for(let i in text){
             let chr = text[i];
