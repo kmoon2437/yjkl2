@@ -34,9 +34,14 @@ module.exports = class LineConverter{
                 if(data2[data2.length-1]
                 && !(data2[data2.length-1] instanceof Array)
                 && rubyCount < data2[data2.length-1].count){
-                    if(!data2[data2.length-1].data) data2[data2.length-1].data = [];
-                    data2[data2.length-1].data.push(a);
-                    rubyCount++;
+                    if(a[0] instanceof Array){
+                        rubyCount = Infinity;
+                        data2.push(a);
+                    }else{
+                        if(!data2[data2.length-1].data) data2[data2.length-1].data = [];
+                        data2[data2.length-1].data.push(a);
+                        rubyCount++;
+                    }
                 }else data2.push(a);
             });
 
@@ -65,9 +70,9 @@ module.exports = class LineConverter{
                         syll.params = a.pop(); // 특정 글자에만 스타일을 설정하는 경우 등
                     }
                     if(syll.content instanceof Array){
-                        let [ body,ruby ] = syll.content;
+                        let [ body,ruby,startIndex,length ] = syll.content;
                         syll.content = body;
-                        data.push([[syll],ruby]);
+                        data.push([[syll],ruby,startIndex,length]);
                     }else data.push(syll);
                     timings.push({ time:a,params:syll.params });
                 }
@@ -77,12 +82,23 @@ module.exports = class LineConverter{
             let beforeLength = 0;
             data.forEach(a => {
                 if(a instanceof Array){
-                    let [ body,ruby ] = a;
-                    syllables.ruby.push({ beforeLength,ruby,length:body.reduce((a,b) => a+b.content.length,0) });
+                    let [ body,ruby,startIndex,lengthFromStartIndex ] = a;
+                    if(startIndex) beforeLength += startIndex;
+                    let length;
+                    let nextBeforeLength = 0;
+                    if(lengthFromStartIndex){
+                        let entireBody = body.map(a => a.content).join('');
+                        length = entireBody.slice(startIndex,startIndex+lengthFromStartIndex).length;
+                        nextBeforeLength = entireBody.length - length;
+                    }else{
+                        length = body.reduce((a,b) => a+b.content.length,0);
+                        length -= startIndex || 0;
+                    }
+                    syllables.ruby.push({ beforeLength,ruby,length });
                     syllables.body.push(...body.map(b => {
                         return { content:b.content,style:b.params?.style || null };
                     }));
-                    beforeLength = 0;
+                    beforeLength = nextBeforeLength;
                 }else{
                     beforeLength += a.content.length;
                     syllables.body.push({ content:a.content,style:a.params?.style || null });
@@ -118,6 +134,7 @@ module.exports = class LineConverter{
                 showTime:line.show,
                 hideTime:line.hide || null,
                 sub:line.sub,
+                style:line.style || null,
                 params:line.params || {},timings,
                 syllables
             });
