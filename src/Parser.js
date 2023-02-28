@@ -152,6 +152,20 @@ module.exports = class Parser{
         }
     }
     
+    static isValidNumber(num){
+        if(typeof num == 'number') return true;
+        else if(typeof num == 'string'){
+            if(isNaN(Number(num))){
+                try{
+                    Parser.#parseMathExpression(num);
+                    return true;
+                }catch(e){
+                    return false;
+                }
+            }else return true;
+        }else return false;
+    }
+    
     static parseNumber(num){
         if(typeof num == 'number') return num;
         else if(typeof num == 'string'){
