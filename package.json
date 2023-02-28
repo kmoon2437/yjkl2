@@ -6,9 +6,6 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "bin": {
-    "content2yjkl2": "cli/content2yjkl2.js"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/kmoon2437/yjkl2.git"
