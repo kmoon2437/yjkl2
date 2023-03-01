@@ -52,7 +52,7 @@ function processTiming(content){
                         timing.splitTimes.push(Parser.parseNumber(time[1]));
                         timing.splitRatio.push(time[0]);
                     }else{
-                        time.splitTimes.push(Parser.parseNumber(time));
+                        timing.splitTimes.push(Parser.parseNumber(time));
                         timing.splitRatio.push(1);
                     }
                 });
