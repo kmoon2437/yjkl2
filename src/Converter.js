@@ -2,10 +2,6 @@ const LineConverter = require('./LineConverter');
 const Events = require('./Events');
 const BPMConverter = require('./BPMConverter');
 
-const LINE_0 = 0;
-const LINE_1 = 1;
-const LINE_2 = 2;
-
 module.exports = class Converter{
     static convert(data,opts){
         opts = Object.assign({
@@ -67,6 +63,8 @@ module.exports = class Converter{
 
         // 이벤트 형식으로 변환
         let events = new Events();
+        let interludeEndTimes = [];
+        let hideTimes = [ 0 ];
         for(let i in classifiedLines){
             classifiedLines[i].forEach((line,j) => {
                 //console.log(line.sub,i,j,line.params,line.startCount);
@@ -74,22 +72,31 @@ module.exports = class Converter{
                     let t = line.content[0].syllables[0].timing;
                     let beat = 60000/t.currentBPM;
                     let startTime = t.start;
+                    if(typeof line.params.interlude != 'boolean'){
+                        interludeEndTimes.push(line.showTime);
+                    }else if(line.params.interlude){
+                        interludeEndTimes.push(line.showTime);
+                    }
                     let count = typeof line.params.startCount == 'number' ? Math.max(1,Math.min(4,line.params.startCount)) : 4;
                     for(let i = 0;i <= count;i++){
                         events.add(startTime-(beat*i),'countdown',{ val:i || null,lineCode:line.lineCode });
                     }
+                }else if(typeof line.params.interlude == 'boolean' && line.params.interlude){
+                    interludeEndTimes.push(line.showTime);
                 }
                 events.add(line.showTime,'renderlyrics',line);
                 // 어차피 숨김 이벤트가 없어도
                 // 다음에 같은 위치에 다른 가사가 오면
                 // 렌더링할 때 그걸로 대체됨
                 if(line.hideTime && line.showTime < line.hideTime){
+                    hideTimes.push(line.hideTime);
                     events.add(line.hideTime,'hidelyrics',{ lineCode:line.lineCode });
                 }else if(j == classifiedLines[i].length-1){
                     // 근데 이게 마지막이면 다음 가사가 없으므로
                     // 이 가사가 끝나는 즉시 가사를 숨김
                     let t = line.content[line.content.length-1];
                     t = t.syllables[t.syllables.length-1];
+                    hideTimes.push(t.timing.end);
                     events.add(t.timing.end,'hidelyrics',{ lineCode:line.lineCode });
                 }
             });
@@ -104,6 +111,12 @@ module.exports = class Converter{
         // 참고로 cleangui는 제목 숨기기 이벤트
         events.add(Math.min(10000,firstEventTime),'cleangui',{},true);
         events.add(0,'hidelyrics',{},true);
+        
+        hideTimes = hideTimes.sort((a,b) => b-a);
+        for(let t of interludeEndTimes){
+            let s = hideTimes.filter(a => a <= t)[0];
+            events.add(s,'interlude',{ endTime:t });
+        }
         
         events.add(lastEventTime+150,'showinfo',{});
         events.add(lastEventTime+150+7500,'cleangui',{});

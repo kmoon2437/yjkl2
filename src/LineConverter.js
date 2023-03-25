@@ -29,11 +29,12 @@ function processDuration(content,playtime){
     return content;
 }
 
-function processTiming(content){
+function processTiming(content,offset = 0){
     let lastI = 0;
-    let lastJ = -1;
+    let lastJ = 0;
     for(let i in content){
         i = parseInt(i,10);
+        //console.log(content[i])
         for(let j in content[i].syllables){
             j = parseInt(j,10);
             let oldTiming = content[i].syllables[j].timing;
@@ -60,17 +61,27 @@ function processTiming(content){
             }else{
                 timing.start = Parser.parseNumber(start);
             }
-            if(content[lastI]
+            //console.log(i,j,lastI,lastJ)
+            if(!(i == lastI && j == lastJ) && content[lastI]
             && content[lastI].syllables[lastJ]
-            && content[lastI].syllables[lastJ].timing.end === null){
+            && ( typeof content[lastI].syllables[lastJ].timing.end == 'undefined'
+            || content[lastI].syllables[lastJ].timing.end === null) ){
+                //console.log(i,j,lastI,lastJ,content[lastI].syllables[lastJ])
                 content[lastI].syllables[lastJ].timing.end = timing.start;
             }
             let gcd = Parser.calcGCD(timing.splitRatio);
             timing.splitRatio = timing.splitRatio.map(a => a / gcd);
             content[i].syllables[j].timing = timing;
             lastJ = j;
+            lastI = i;
         }
-        lastI = i;
+    }
+    for(let i in content){
+        for(let j in content[i].syllables){
+            content[i].syllables[j].timing.start += offset;
+            content[i].syllables[j].timing.end += offset;
+            content[i].syllables[j].timing.splitTimes = content[i].syllables[j].timing.splitTimes.map(a => a + offset);
+        }
     }
     return content;
 }

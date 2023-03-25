@@ -1,6 +1,3 @@
-// private static 변수/함수
-var __ = {};
-
 module.exports = class Events{
     constructor(events){
         this._events = (events instanceof Events)
@@ -14,7 +11,18 @@ module.exports = class Events{
         else this._events[ms].push({ name:name,data:data });
     }
     
-    getAll(){
-        return this._events;
+    getAll(eventName){
+        if(eventName){
+            let events = {};
+            for(let i in this._events){
+                this._events[i].filter(a => a.name == eventName).forEach(a => {
+                    if(!events[i]) events[i] = [];
+                    events[i].push(a);
+                });
+            }
+            return events;
+        }else{
+            return this._events;
+        }
     }
 }
