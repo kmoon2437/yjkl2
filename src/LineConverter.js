@@ -92,6 +92,13 @@ module.exports = class LineConverter{
         data.lyrics.forEach(line => {
             line.show = Parser.parseNumber(line.show);
             if(line.hide) line.hide = Parser.parseNumber(line.hide);
+            if(line.offset){
+                line.offset = Parser.parseNumber(line.offset);
+            }else{
+                line.offset = 0;
+            }
+            line.show += line.offset;
+            if(line.hide) line.hide += line.offset;
             line.mode = Parser.isValidNumber(line.start) ? 'duration' : 'timing';
             line.start = Parser.parseNumber(line.start);
             if(typeof line.line != 'number' || line.show < 0) return;
@@ -150,7 +157,7 @@ module.exports = class LineConverter{
             
             // 타이밍 처리
             if(line.mode == 'timing'){
-                content = processTiming(content);
+                content = processTiming(content,line.offset || 0);
             }else if(line.mode == 'duration'){
                 content = processDuration(content,line.start);
             }
