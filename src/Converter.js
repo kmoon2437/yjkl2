@@ -2,6 +2,18 @@ const LineConverter = require('./LineConverter');
 const Events = require('./Events');
 const BPMConverter = require('./BPMConverter');
 
+function getFirstLyricIndex(content){
+    for(let i in content){
+        if(content[i].type == 'lyric') return i;
+    }
+}
+
+function getLastLyricIndex(content){
+    for(let i = content.length-1;i >= 0;i--){
+        if(content[i].type == 'lyric') return i;
+    }
+}
+
 module.exports = class Converter{
     static convert(data,opts){
         opts = Object.assign({
@@ -30,6 +42,7 @@ module.exports = class Converter{
                 //console.log('hideTime2',lines[i].hideTime);
             }
             for(let j in lines[i].content){
+                if(lines[i].content[j].type != 'lyric') continue;
                 for(let k in lines[i].content[j].syllables){
                     lines[i].content[j].syllables[k].timing.currentBPM = bpmc.getBPM(lines[i].content[j].syllables[k].timing.start);
                     lines[i].content[j].syllables[k].timing.start = bpmc.convertToMs(lines[i].content[j].syllables[k].timing.start);
@@ -69,7 +82,8 @@ module.exports = class Converter{
             classifiedLines[i].forEach((line,j) => {
                 //console.log(line.sub,i,j,line.params,line.startCount);
                 if(line.params.startCount){
-                    let t = line.content[0].syllables[0].timing;
+                    let firstLyric;
+                    let t = line.content[getFirstLyricIndex(line.content)].syllables[0].timing;
                     let beat = 60000/t.currentBPM;
                     let startTime = t.start;
                     if(typeof line.params.interlude != 'boolean'){
@@ -94,7 +108,7 @@ module.exports = class Converter{
                 }else if(j == classifiedLines[i].length-1){
                     // 근데 이게 마지막이면 다음 가사가 없으므로
                     // 이 가사가 끝나는 즉시 가사를 숨김
-                    let t = line.content[line.content.length-1];
+                    let t = line.content[getLastLyricIndex(line.content)];
                     t = t.syllables[t.syllables.length-1];
                     hideTimes.push(t.timing.end);
                     events.add(t.timing.end,'hidelyrics',{ lineCode:line.lineCode });

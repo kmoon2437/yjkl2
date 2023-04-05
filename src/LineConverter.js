@@ -2,6 +2,7 @@ const Parser = require('./Parser');
 
 function processDuration(content,playtime){
     for(let i in content){
+        if(content[i].type != 'lyric') continue;
         for(let j in content[i].syllables){
             let oldTiming =  content[i].syllables[j].timing;
             let timing = {
@@ -32,8 +33,14 @@ function processDuration(content,playtime){
 function processTiming(content,offset = 0){
     let lastI = 0;
     let lastJ = 0;
+    let isLyric = false;
     for(let i in content){
+        if(content[i].type != 'lyric'){
+            if(!isLyric) lastI++;
+            continue;
+        }
         i = parseInt(i,10);
+        isLyric = true;
         //console.log(content[i])
         for(let j in content[i].syllables){
             j = parseInt(j,10);
@@ -61,7 +68,7 @@ function processTiming(content,offset = 0){
             }else{
                 timing.start = Parser.parseNumber(start);
             }
-            //console.log(i,j,lastI,lastJ)
+            //console.log(content[lastI])
             if(!(i == lastI && j == lastJ) && content[lastI]
             && content[lastI].syllables[lastJ]
             && ( typeof content[lastI].syllables[lastJ].timing.end == 'undefined'
@@ -111,6 +118,7 @@ module.exports = class LineConverter{
                     a.type = a.type || 'block';
                     if(a.type == 'block'){
                         let block = {
+                            type:'lyric',
                             ruby:a.ruby,style:null,syllables:[]
                         };
                         let timings = [];
@@ -124,6 +132,11 @@ module.exports = class LineConverter{
                             //block[0].push(syll);
                         });
                         content.push(block);
+                    }else if(a.type == 'icon'){
+                        content.push({
+                            type:'icon',
+                            src:a.src
+                        });
                     }
                 }else{ // 배열인 경우
                     let syll = { content:a.shift(),style:null };
@@ -140,6 +153,7 @@ module.exports = class LineConverter{
                     }
                     syll.timing = { time:a };
                     content.push({
+                        type:'lyric',
                         ruby,style:null,syllables:[syll]
                     });
                 }
@@ -147,6 +161,7 @@ module.exports = class LineConverter{
             
             // 가사 처리
             for(let i in content){
+                if(content[i].type != 'lyric') continue;
                 for(let j in content[i].syllables){
                     if(content[i].syllables[j].params.style){
                         content[i].syllables[j].style = content[i].syllables[j].params.style;
