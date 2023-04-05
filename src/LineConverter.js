@@ -133,10 +133,7 @@ module.exports = class LineConverter{
                         });
                         content.push(block);
                     }else if(a.type == 'icon'){
-                        content.push({
-                            type:'icon',
-                            src:a.src
-                        });
+                        content.push(a);
                     }
                 }else{ // 배열인 경우
                     let syll = { content:a.shift(),style:null };
