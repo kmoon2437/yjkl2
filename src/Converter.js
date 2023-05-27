@@ -33,13 +33,10 @@ module.exports = class Converter{
         data.config.ticksPerBeat = data.config.ticksPerBeat || 120;
         let lines = LineConverter.convert(data);
         let bpmc = new BPMConverter(data.tempo,data.config.ticksPerBeat,sync);
-        //console.log(bpmc);
         for(let i in lines){
             lines[i].showTime = bpmc.convertToMs(lines[i].showTime);
             if(lines[i].hideTime){
-                //console.log('hideTime',lines[i].hideTime);
                 lines[i].hideTime = bpmc.convertToMs(lines[i].hideTime);
-                //console.log('hideTime2',lines[i].hideTime);
             }
             for(let j in lines[i].content){
                 if(lines[i].content[j].type != 'lyric') continue;
@@ -51,18 +48,7 @@ module.exports = class Converter{
                         lines[i].content[j].syllables[k].timing.splitTimes = lines[i].content[j].syllables[k].timing.splitTimes.map(a => bpmc.convertToMs(a));
                     }
                 }
-            }/*
-
-            for(let j in lines[i].timings){
-                lines[i].timings[j].currentBPM = bpmc.getBPM(lines[i].timings[j].start);
-                lines[i].timings[j].start = bpmc.convertToMs(lines[i].timings[j].start);
-                lines[i].timings[j].end = bpmc.convertToMs(lines[i].timings[j].end);
-                if(lines[i].timings[j].splitTimes){
-                    lines[i].timings[j].splitTimes = lines[i].timings[j].splitTimes.map(a => {
-                        return bpmc.convertToMs(a);
-                    });
-                }
-            }*/
+            }
         }
         
         // 줄 번호에 따라 분류
@@ -80,9 +66,7 @@ module.exports = class Converter{
         let hideTimes = [ 0 ];
         for(let i in classifiedLines){
             classifiedLines[i].forEach((line,j) => {
-                //console.log(line.sub,i,j,line.params,line.startCount);
                 if(line.params.startCount){
-                    let firstLyric;
                     let t = line.content[getFirstLyricIndex(line.content)].syllables[0].timing;
                     let beat = 60000/t.currentBPM;
                     let startTime = t.start;
@@ -140,7 +124,6 @@ module.exports = class Converter{
             events.add(time,'playmv',{},true);
         }
 
-        //console.log(JSON.stringify(events.getAll(),0,4)); process.exit();
         return {
             info:data.info,
             files:data.files,
