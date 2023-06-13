@@ -17,7 +17,12 @@ function getLastLyricIndex(content){
 module.exports = class Converter{
     static convert(data,opts){
         opts = Object.assign({
-            enableMsec:false
+            enableMsec:false,
+            defaultFadeOutTime:1000,
+            interludeDelay:0,
+            fadeOutInterludeDelay:500,
+            showinfoDelay:150,
+            fadeOutShowinfoDelay:500
         },opts);
         
         data.info = data.info || {};
@@ -29,7 +34,7 @@ module.exports = class Converter{
         let sync = data.config.syncOffset || 0;
         if(useAudioSync) sync += data.config.audioSyncOffset || 0;
         
-        // bpm을 반영해 밀리초로 변환
+        // 템포를 반영해 밀리초로 변환
         data.config.ticksPerBeat = data.config.ticksPerBeat || 120;
         let lines = LineConverter.convert(data);
         let bpmc = new BPMConverter(data.tempo,data.config.ticksPerBeat,sync);
@@ -63,7 +68,9 @@ module.exports = class Converter{
         // 이벤트 형식으로 변환
         let events = new Events();
         let interludeEndTimes = [];
-        let hideTimes = [ 0 ];
+        let hideTimes = [ [0,false] ];
+        let isLastHideFadeOut = false;
+        let lastHideFadeOutTime = 0;
         for(let i in classifiedLines){
             classifiedLines[i].forEach((line,j) => {
                 if(line.params.startCount){
@@ -87,44 +94,49 @@ module.exports = class Converter{
                 // 다음에 같은 위치에 다른 가사가 오면
                 // 렌더링할 때 그걸로 대체됨
                 if(line.hideTime && line.showTime < line.hideTime){
-                    hideTimes.push(line.hideTime);
-                    events.add(line.hideTime,'hidelyrics',{ lineCode:line.lineCode });
+                    hideTimes.push([line.hideTime,line.params.fadeOut,line.params.fadeOutTime || opts.defaultFadeOutTime]);
+                    events.add(line.hideTime,'hidelyrics',{ lineCode:line.lineCode,fadeOut:line.params.fadeOut,fadeOutTime:line.params.fadeOutTime || opts.defaultFadeOutTime });
+                    isLastHideFadeOut = line.params.fadeOut;
+                    lastHideFadeOutTime = line.params.fadeOutTime || opts.defaultFadeOutTime;
                 }else if(j == classifiedLines[i].length-1){
                     // 근데 이게 마지막이면 다음 가사가 없으므로
                     // 이 가사가 끝나는 즉시 가사를 숨김
                     let t = line.content[getLastLyricIndex(line.content)];
                     t = t.syllables[t.syllables.length-1];
-                    hideTimes.push(t.timing.end);
-                    events.add(t.timing.end,'hidelyrics',{ lineCode:line.lineCode });
+                    hideTimes.push([t.timing.end,line.params.fadeOut,line.params.fadeOutTime || opts.defaultFadeOutTime]);
+                    events.add(t.timing.end,'hidelyrics',{ lineCode:line.lineCode,fadeOut:line.params.fadeOut,fadeOutTime:line.params.fadeOutTime || opts.defaultFadeOutTime });
+                    isLastHideFadeOut = line.params.fadeOut;
+                    lastHideFadeOutTime = line.params.fadeOutTime || opts.defaultFadeOutTime;
                 }
             });
         }
         
-        let keys = Object.keys(events.getAll());
+        let DEBUG = {};
+        let keys = Object.keys(events.getAll()).map(a => parseFloat(a)).filter(a => !Number.isNaN(a));
+        DEBUG.stimes = keys;
         let firstEventTime = Math.min(...keys);
         firstEventTime = Math.max(firstEventTime-1500,0);
         let lastEventTime = Math.max(...keys);
-
         // 재생후 firsteventtime에 도달하지 않아도 10초가 되면 cleangui 실행
         // 참고로 cleangui는 제목 숨기기 이벤트
         events.add(Math.min(10000,firstEventTime),'cleangui',{},true);
         events.add(0,'hidelyrics',{},true);
         
-        hideTimes = hideTimes.sort((a,b) => b-a);
+        hideTimes = hideTimes.sort((a,b) => b[0]-a[0]);
         for(let t of interludeEndTimes){
-            let s = hideTimes.filter(a => a <= t)[0];
-            events.add(s,'interlude',{ endTime:t });
+            let [ s,isFadeOut,fadeOutTime ] = hideTimes.filter(a => a[0] <= t)[0];
+            events.add(s+(isFadeOut ? fadeOutTime+opts.fadeOutInterludeDelay : opts.interludeDelay),'interlude',{ endTime:t });
         }
         
-        events.add(lastEventTime+150,'showinfo',{});
-        events.add(lastEventTime+150+7500,'cleangui',{});
+        events.add(lastEventTime+(isLastHideFadeOut ? lastHideFadeOutTime+opts.fadeOutShowinfoDelay : opts.showinfoDelay),'showinfo',{});
+        events.add(lastEventTime+(isLastHideFadeOut ? lastHideFadeOutTime+opts.fadeOutShowinfoDelay : opts.showinfoDelay)+7500,'cleangui',{});
 
         if(data.files.mv){
             let time = data.files.mvTiming || 0;
             events.add(time,'playmv',{},true);
         }
 
-        return {
+        return { DEBUG,
             info:data.info,
             files:data.files,
             config:data.config,

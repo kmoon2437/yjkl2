@@ -1,35 +1,5 @@
 const Parser = require('./Parser');
 
-function processDuration(content,playtime){
-    for(let i in content){
-        if(content[i].type != 'lyric') continue;
-        for(let j in content[i].syllables){
-            let oldTiming =  content[i].syllables[j].timing;
-            let timing = {
-                start:playtime,end:0,
-                splitTimes:[],
-                splitRatio:[]
-            };
-            oldTiming.time.forEach(dur => {
-                if(dur instanceof Array){
-                    playtime += Parser.parseNumber(dur[1]);
-                    timing.splitRatio.push(dur[0]);
-                }else{
-                    playtime += Parser.parseNumber(dur);
-                    timing.splitRatio.push(1);
-                }
-                timing.splitTimes.push(playtime);
-            });
-            timing.splitTimes.pop();
-            let gcd = Parser.calcGCD(timing.splitRatio);
-            timing.splitRatio = timing.splitRatio.map(a => a / gcd);
-            timing.end = playtime;
-            content[i].syllables[j].timing = timing;
-        }
-    }
-    return content;
-}
-
 function processTiming(content,offset = 0){
     let lastI = 0;
     let lastJ = 0;
@@ -106,8 +76,6 @@ module.exports = class LineConverter{
             }
             line.show += line.offset;
             if(line.hide) line.hide += line.offset;
-            line.mode = Parser.isValidNumber(line.start) ? 'duration' : 'timing';
-            line.start = Parser.parseNumber(line.start);
             if(typeof line.line != 'number' || line.show < 0) return;
             let content = [];
 
@@ -121,7 +89,6 @@ module.exports = class LineConverter{
                             type:'lyric',
                             ruby:a.ruby,style:null,syllables:[]
                         };
-                        let timings = [];
                         a.data.forEach(b => {
                             let syll = { content:b.shift(),style:null };
                             if(typeof b[b.length-1] == 'object' && !(b[b.length-1] instanceof Array)){
@@ -168,11 +135,7 @@ module.exports = class LineConverter{
             }
             
             // 타이밍 처리
-            if(line.mode == 'timing'){
-                content = processTiming(content,line.offset || 0);
-            }else if(line.mode == 'duration'){
-                content = processDuration(content,line.start);
-            }
+            content = processTiming(content,line.offset || 0);
 
             lines.push({
                 lineCode:line.line,
