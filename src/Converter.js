@@ -123,9 +123,10 @@ module.exports = class Converter{
         events.add(0,'hidelyrics',{},true);
         
         hideTimes = hideTimes.sort((a,b) => b[0]-a[0]);
-        while(interludeEndTimes[0] < hideTimes[0]) interludeEndTimes.shift();
         for(let t of interludeEndTimes){
-            let [ s,isFadeOut,fadeOutTime ] = hideTimes.filter(a => a[0] <= t)[0];
+            let hideTimeArr = hideTimes.filter(a => a[0] <= t)[0];
+            if(!hideTimeArr) continue;
+            let [ s,isFadeOut,fadeOutTime ] = hideTimeArr;
             events.add(s+(isFadeOut ? fadeOutTime+opts.fadeOutInterludeDelay : opts.interludeDelay),'interlude',{ endTime:t });
         }
         
