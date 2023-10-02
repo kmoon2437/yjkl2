@@ -87,7 +87,7 @@ module.exports = class LineConverter{
                     if(a.type == 'block'){
                         let block = {
                             type:'lyric',
-                            ruby:a.ruby,style:null,syllables:[]
+                            ruby:a.ruby,style:a.style,syllables:[]
                         };
                         a.data.forEach(b => {
                             let syll = { content:b.shift(),style:null };
@@ -118,7 +118,7 @@ module.exports = class LineConverter{
                     syll.timing = { time:a };
                     content.push({
                         type:'lyric',
-                        ruby,style:null,syllables:[syll]
+                        ruby,style:syll.params.style,syllables:[syll]
                     });
                 }
             });
