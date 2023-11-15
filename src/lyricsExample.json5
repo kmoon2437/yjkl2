@@ -34,7 +34,7 @@
         mv:'뮤비영상파일',
         album:'앨범사진파일'
     },
-    config:{
+    meta:{
         mvTiming:0, // 뮤비 시작타이밍(밀리초)
         medleyInfo:null, // 메들리곡용 정보(미구현)
         

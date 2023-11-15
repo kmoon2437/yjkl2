@@ -27,17 +27,17 @@ module.exports = class Converter{
         
         data.info = data.info || {};
         data.files = data.files || {};
-        data.config = data.config || {};
+        data.meta = data.meta || data.config || {};
 
         // data는 json 파싱이 됐다고 가정
         let useAudioSync = opts.forceAudioSync ? true : !data.files.midi;
-        let sync = data.config.syncOffset || 0;
-        if(useAudioSync) sync += data.config.audioSyncOffset || 0;
+        let sync = data.meta.syncOffset || 0;
+        if(useAudioSync) sync += data.meta.audioSyncOffset || 0;
         
         // 템포를 반영해 밀리초로 변환
-        data.config.ticksPerBeat = data.config.ticksPerBeat || 120;
+        data.meta.ticksPerBeat = data.meta.ticksPerBeat || 120;
         let lines = LineConverter.convert(data);
-        let bpmc = new BPMConverter(data.tempo,data.config.ticksPerBeat,sync);
+        let bpmc = new BPMConverter(data.tempo,data.meta.ticksPerBeat,sync);
         for(let i in lines){
             lines[i].showTime = bpmc.convertToMs(lines[i].showTime);
             if(lines[i].hideTime){
@@ -141,7 +141,7 @@ module.exports = class Converter{
         return { DEBUG,
             info:data.info,
             files:data.files,
-            config:data.config,
+            meta:data.meta,
             events:events.getAll(),
             lyricLines:lines
         };
