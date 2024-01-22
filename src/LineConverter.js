@@ -120,9 +120,11 @@ module.exports = class LineConverter {
                     }
                     syll.timing = { time: a };
                     content.push({
-                        type: 'lyric',
-                        ruby,
-                        style: syll.params.style,
+                        type: 'lyric', ruby,
+
+                        // 값이 없을 때 null 값을 할당해줘야 ?? 연산자로 값의 존재여부를 확인할 수 있음
+                        style: syll.params.style ?? null,
+                        chorus: syll.params.chorus ?? null,
                         syllables: [syll]
                     });
                 }
@@ -147,7 +149,8 @@ module.exports = class LineConverter {
                 showTime: line.show,
                 hideTime: line.hide || null,
                 sub: line.sub,
-                style: line.style || null,
+                style: line.style ?? null,
+                chorus: !!line.chorus,
                 params: line.params || {},
                 content
             });

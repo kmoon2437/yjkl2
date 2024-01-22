@@ -13,8 +13,7 @@ module.exports = class BPMConverter {
             lastBPM = e.bpm;
             this.bpmChanges.push({
                 bpm: e.bpm,
-                ms,
-                tick: e.changeAt
+                ms, tick: e.changeAt
             });
         }
     }
