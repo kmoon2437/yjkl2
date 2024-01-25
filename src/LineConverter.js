@@ -90,6 +90,7 @@ module.exports = class LineConverter {
                             type: 'lyric',
                             ruby: a.ruby,
                             style: a.style,
+                            chorus: a.chorus,
                             syllables: []
                         };
                         a.data.forEach(b => {
