@@ -65,11 +65,12 @@ module.exports = class Converter {
         }
 
         // 줄 번호에 따라 분류
-        let classifiedLines = {};
+        // 가사가 없는 줄도 일단 뭐가 있긴 있어야 밑에 있는 반복문이 정상작동함
+        let classifiedLines = {
+            [-1]: [], [0]: [],
+            [1]: [], [2]: []
+        };
         lines.forEach(line => {
-            if (!classifiedLines[line.lineCode]) {
-                classifiedLines[line.lineCode] = [];
-            }
             classifiedLines[line.lineCode].push(line);
         });
 
@@ -79,7 +80,7 @@ module.exports = class Converter {
         let hideTimes = [[0, false]];
         let isLastHideFadeOut = false;
         let lastHideFadeOutTime = 0;
-        for (let i in classifiedLines) {
+        for (let i = -1; i < 3; i++) { // for in 쓰면 순서가 강제로 0 1 2 -1 순서가 되므로 이렇게 해야 됨
             classifiedLines[i].forEach((line, j) => {
                 if (line.params.startCount) {
                     let t = line.content[getFirstLyricIndex(line.content)].syllables[0].timing;

@@ -94,11 +94,10 @@ module.exports = class LineConverter {
                             syllables: []
                         };
                         a.data.forEach(b => {
-                            let syll = { content: b.shift(), style: null };
-                            if (typeof b[b.length - 1] == 'object' && !(b[b.length - 1] instanceof Array)) {
-                                syll.params = b.pop(); // 특정 글자에만 스타일을 설정하는 경우 등
-                            } else syll.params = {};
-                            syll.timing = { time: b };
+                            let [ syllContent, start, end, params ] = b;
+                            let syll = { content: syllContent, style: null };
+                            syll.params = params ?? {};
+                            syll.timing = { time: [start, end ?? null] };
                             block.syllables.push(syll);
                         });
                         content.push(block);
@@ -107,10 +106,9 @@ module.exports = class LineConverter {
                     }
                 } else {
                     // 배열인 경우
-                    let syll = { content: a.shift(), style: null };
-                    if (typeof a[a.length - 1] == 'object' && !(a[a.length - 1] instanceof Array)) {
-                        syll.params = a.pop(); // 특정 글자에만 스타일을 설정하는 경우 등
-                    } else syll.params = {};
+                    let [ syllContent, start, end, params ] = a;
+                    let syll = { content: syllContent, style: null };
+                    syll.params = params ?? {};
                     let ruby;
                     if (syll.content instanceof Array) {
                         let [body, rubyy] = syll.content;
@@ -119,7 +117,7 @@ module.exports = class LineConverter {
                     } else {
                         ruby = '';
                     }
-                    syll.timing = { time: a };
+                    syll.timing = { time: [start, end ?? null] };
                     content.push({
                         type: 'lyric', ruby,
 
